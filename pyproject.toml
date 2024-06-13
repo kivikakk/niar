@@ -1,0 +1,24 @@
+[project]
+name = "niar"
+version = "0.1"
+description = "A small framework for building projects with Amaranth"
+authors = [
+    {name = "Asherah Connor", email = "ashe@kivikakk.ee"},
+]
+dependencies = [
+    "amaranth >= 0.4.5, < 0.6",
+]
+requires-python = ">=3.8"
+license = {text = "BSD-2-Clause"}
+
+[project.optional-dependencies]
+build = [
+    "amaranth-boards",  # for test
+]
+
+[project.urls]
+Homepage = "https://github.com/kivikakk/niar"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
