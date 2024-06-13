@@ -100,6 +100,8 @@ def main(np: Project, args):
             black_boxes={},
         )
 
+    # TODO: bring in Chryse's CompilationUnit stuff to reduce rework.
+
     cc_o_paths = {
         cxxrtl_cc_path: np.path.build(f"{np.name}.o"),
     }
