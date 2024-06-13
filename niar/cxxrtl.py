@@ -118,8 +118,9 @@ def main(np: Project, args):
         cmd = [
             "c++",
             *cxxflags,
-            f"-I{np.path("build")}",
-            f"-I{yosys.data_dir() / "include" / "backends" / "cxxrtl" / "runtime"}",
+            "-I" + str(np.path("build")),
+            "-I"
+            + str(yosys.data_dir() / "include" / "backends" / "cxxrtl" / "runtime"),
             "-c",
             str(cc_path),
             "-o",
