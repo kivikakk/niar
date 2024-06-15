@@ -17,7 +17,7 @@ def cli(np: Project):
             "build", help="build the design, and optionally program it"
         ),
     )
-    if getattr(np, "cxxrtl_targets"):
+    if hasattr(np, "cxxrtl_targets"):
         cxxrtl.add_arguments(
             np, subparsers.add_parser("cxxrtl", help="run the C++ simulator tests")
         )
