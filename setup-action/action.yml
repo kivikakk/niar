@@ -30,7 +30,7 @@ runs:
       path: setup-niar-out/amaranth-stdio
 
   - name: Install amaranth-stdio
-    run: cd setup-niar-out/amaranth-stdio && pip install .
+    run: cd setup-niar-out/amaranth-stdio && pip install -e .
     shell: bash
 
   - name: Checkout amaranth-boards
@@ -40,7 +40,7 @@ runs:
       path: setup-niar-out/amaranth-boards
 
   - name: Install amaranth-boards
-    run: cd setup-niar-out/amaranth-boards && pip install .
+    run: cd setup-niar-out/amaranth-boards && pip install -e .
     shell: bash
 
   - name: Install Zig
