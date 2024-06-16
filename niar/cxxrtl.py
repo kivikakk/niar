@@ -175,16 +175,14 @@ def main(np: Project, args):
 
     exe_o_path = np.path.build("cxxrtl")
     if platform.uses_zig:
-        # Zig really wants relative paths.
-        joined_o_paths = ",".join(
-            f"../{p.relative_to(np.path())}" for p in cc_o_paths.values()
-        )
         cmd = [
             "zig",
             "build",
             f"-Dclock_hz={int(platform.default_clk_frequency)}",
             f"-Dyosys_data_dir={yosys.data_dir()}",
-            f"-Dcxxrtl_o_paths={joined_o_paths}",
+        ] + [
+            # Zig really wants relative paths.
+            f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths.values()
         ]
         if args.optimize.opt_app:
             cmd += ["-Doptimize=ReleaseFast"]
