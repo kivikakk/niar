@@ -1,6 +1,12 @@
 name: Setup Niar
 
 inputs:
+  install-oss-cad-suite:
+    description: Install OSS CAD Suite.
+
+  github-token:
+    description: GitHub token used by YosysHQ/setup-oss-cad-suite.
+
   install-zig:
     description: Install Zig with specified version.
 
@@ -33,6 +39,17 @@ runs:
 
   - name: Install amaranth-boards
     run: pip install --no-deps git+https://github.com/amaranth-lang/amaranth-boards.git
+    shell: bash
+
+  - name: Install OSS CAD Suite
+    if: ${{ inputs.install-oss-cad-suite }}
+    uses: YosysHQ/setup-oss-cad-suite@v3
+    with:
+      github-token: ${{ inputs.github-token }}
+
+  - name: Report Yosys version
+    if: ${{ inputs.install-oss-cad-suite }}
+    run: yosys --version
     shell: bash
 
   - name: Install Zig
