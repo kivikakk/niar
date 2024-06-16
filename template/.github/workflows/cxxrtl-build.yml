@@ -1,0 +1,25 @@
+name: CXXRTL build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  cxxrtl-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Install pip dependencies
+      run: pip install --editable .
+
+    - uses: kivikakk/niar/setup-action@main
+
+    - name: Elaborate, compile and run cxxrtl
+      run: python -m ili9341spi cxxrtl
