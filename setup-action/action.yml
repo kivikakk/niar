@@ -27,24 +27,12 @@ runs:
     run: cd setup-niar-out/niar && pip install -e .
     shell: bash
 
-  - name: Checkout amaranth-stdio
-    uses: actions/checkout@v4
-    with:
-      repository: amaranth-lang/amaranth-stdio
-      path: setup-niar-out/amaranth-stdio
-
   - name: Install amaranth-stdio
-    run: cd setup-niar-out/amaranth-stdio && pip install -e .
+    run: pip install --no-deps git+https://github.com/amaranth-lang/amaranth-stdio.git
     shell: bash
 
-  - name: Checkout amaranth-boards
-    uses: actions/checkout@v4
-    with:
-      repository: amaranth-lang/amaranth-boards
-      path: setup-niar-out/amaranth-boards
-
   - name: Install amaranth-boards
-    run: cd setup-niar-out/amaranth-boards && pip install -e .
+    run: pip install --no-deps git+https://github.com/amaranth-lang/amaranth-boards.git
     shell: bash
 
   - name: Install Zig
