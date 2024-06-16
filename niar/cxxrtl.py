@@ -226,10 +226,12 @@ def _cxxrtl_convert_with_header(
             raise AssertionError(
                 "cc_out must be relative to cwd for builtin-yosys to write to it"
             )
+    rtlil_out = f"{cc_out}.il"
     rtlil_text = rtlil.convert(design, name=name, platform=platform)
     script = []
     for box_source in black_boxes.values():
         script.append(f"read_rtlil <<rtlil\n{box_source}\nrtlil")
     script.append(f"read_rtlil <<rtlil\n{rtlil_text}\nrtlil")
+    script.append(f"write_rtlil {rtlil_out}")
     script.append(f"write_cxxrtl -header {cc_out}")
     yosys.run(["-q", "-"], "\n".join(script))
