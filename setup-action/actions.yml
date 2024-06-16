@@ -1,0 +1,55 @@
+name: Setup Niar
+
+inputs:
+  install-zig:
+    description: Install Zig with specified version.
+
+runs:
+  using: composite
+  steps:
+  - name: Checkout Niar
+    uses: actions/checkout@v4
+    with:
+      repository: kivikakk/niar
+      path: setup-niar-out/niar
+
+  - name: Install Python 3.12
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.12'
+      cache: pip
+
+  - name: Install niar
+    run: cd setup-niar-out/niar && pip install -e .
+    shell: bash
+
+  - name: Checkout amaranth-stdio
+    uses: actions/checkout@v4
+    with:
+      repository: amaranth-lang/amaranth-stdio
+      path: setup-niar-out/amaranth-stdio
+
+  - name: Install amaranth-stdio
+    run: cd setup-niar-out/amaranth-stdio && pip install .
+    shell: bash
+
+  - name: Checkout amaranth-boards
+    uses: actions/checkout@v4
+    with:
+      repository: amaranth-lang/amaranth-boards
+      path: setup-niar-out/amaranth-boards
+
+  - name: Install amaranth-boards
+    run: cd setup-niar-out/amaranth-boards && pip install .
+    shell: bash
+
+  - name: Install Zig
+    if: ${{ inputs.install-zig }}
+    uses: goto-bus-stop/setup-zig@v2
+    with:
+      version: ${{ inputs.install-zig }}
+
+  - name: Report Zig version
+    if: ${{ inputs.install-zig }}
+    run: zig version
+    shell: bash
