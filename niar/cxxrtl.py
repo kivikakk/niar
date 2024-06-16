@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import shutil
 import subprocess
 from enum import Enum
 from functools import partial
@@ -31,13 +33,19 @@ CXXFLAGS = [
 class _Optimize(Enum):
     none = "none"
     rtl = "rtl"
+    app = "app"
+    both = "both"
 
     def __str__(self):
         return self.value
 
     @property
     def opt_rtl(self) -> bool:
-        return self in (self.rtl,)
+        return self in (self.rtl, self.both)
+
+    @property
+    def opt_app(self) -> bool:
+        return self in (self.app, self.both)
 
 
 def add_arguments(np: Project, parser):
@@ -86,6 +94,8 @@ def add_arguments(np: Project, parser):
 def main(np: Project, args):
     yosys = find_yosys(lambda ver: ver >= (0, 10))
 
+    os.makedirs(np.path.build(), exist_ok=True)
+
     platform = np.cxxrtl_target_by_name(args.target)
     design = construct_top(np, platform)
 
@@ -113,6 +123,11 @@ def main(np: Project, args):
         *(["-O3"] if args.optimize.opt_rtl else ["-O0"]),
         *(["-g"] if args.debug else []),
     ]
+    if platform.uses_zig:
+        cxxflags += [
+            "-DCXXRTL_INCLUDE_CAPI_IMPL",
+            "-DCXXRTL_INCLUDE_VCD_CAPI_IMPL",
+        ]
 
     procs = []
     compile_commands = {}
@@ -128,6 +143,8 @@ def main(np: Project, args):
             "-o",
             str(o_path),
         ]
+        if platform.uses_zig:
+            cmd = ["zig"] + cmd
         compile_commands[o_path] = cmd
         logger.debug(" ".join(str(e) for e in cmd))
         procs.append((cc_path, subprocess.Popen(cmd)))
@@ -157,15 +174,33 @@ def main(np: Project, args):
         raise RuntimeError("failed compile step")
 
     exe_o_path = np.path.build("cxxrtl")
-    cmd = [
-        "c++",
-        *cxxflags,
-        *cc_o_paths.values(),
-        "-o",
-        exe_o_path,
-    ]
-    logger.debug(" ".join(str(e) for e in cmd))
-    subprocess.run(cmd, check=True)
+    if platform.uses_zig:
+        # Zig really wants relative paths.
+        joined_o_paths = ",".join(
+            f"../{p.relative_to(np.path())}" for p in cc_o_paths.values()
+        )
+        cmd = [
+            "zig",
+            "build",
+            f"-Dclock_hz={int(platform.default_clk_frequency)}",
+            f"-Dyosys_data_dir={yosys.data_dir()}",
+            f"-Dcxxrtl_o_paths={joined_o_paths}",
+        ]
+        if args.optimize.opt_app:
+            cmd += ["-Doptimize=ReleaseFast"]
+        logger.debug(" ".join(str(e) for e in cmd))
+        subprocess.run(cmd, cwd="cxxrtl", check=True)
+        shutil.copy("cxxrtl/zig-out/bin/cxxrtl", exe_o_path)
+    else:
+        cmd = [
+            "c++",
+            *cxxflags,
+            *cc_o_paths.values(),
+            "-o",
+            exe_o_path,
+        ]
+        logger.debug(" ".join(str(e) for e in cmd))
+        subprocess.run(cmd, check=True)
 
     if not args.compile:
         cmd = [exe_o_path]
