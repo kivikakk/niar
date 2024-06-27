@@ -30,7 +30,7 @@ runs:
     shell: bash
 
   - name: Install pytest
-    run: pip install pytest
+    run: pip install pytest pytest-xdist
     shell: bash
 
   - name: Install niar

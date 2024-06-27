@@ -19,4 +19,4 @@ jobs:
     - uses: kivikakk/niar/setup-action@main
 
     - name: Run tests
-      run: pytest tests
+      run: pytest -n auto tests
