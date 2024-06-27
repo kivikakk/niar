@@ -105,24 +105,45 @@ def main(np: Project, args):
     cr = CommandRunner(force=args.force)
 
     with logtime(logging.DEBUG, "elaboration"):
-        il_path = np.path.build(f"{np.name}.il")
+        il_path = np.path.build(f"{np.name}.cc.il")
         rtlil_text = rtlil.convert(design, name=np.name, platform=platform)
         with open(il_path, "w") as f:
             f.write(rtlil_text)
 
         cxxrtl_cc_path = np.path.build(f"{np.name}.cc")
-        yosys_script_path = _make_absolute(np.path.build(f"{np.name}-cxxrtl.ys"))
+        yosys_script_path = _make_absolute(np.path.build(f"{np.name}.cc.ys"))
         black_boxes = {}
 
         with open(yosys_script_path, "w") as f:
             for box_source in black_boxes.values():
                 f.write(f"read_rtlil <<rtlil\n{box_source}\nrtlil\n")
             f.write(f"read_rtlil {_make_absolute(il_path)}\n")
-            # TODO: do we want to call any opt passes here?
+            if args.optimize.opt_rtl:
+                f.write("opt\n")
+            f.write(f"write_rtlil {_make_absolute(il_path)}.opt\n")
             f.write(f"write_cxxrtl -header {_make_absolute(cxxrtl_cc_path)}\n")
 
         def rtlil_to_cc():
-            yosys.run(["-q", yosys_script_path])
+            # "opt" without "proc" generates a bunch of warnings like:
+            #
+            #   Warning: Ignoring module ili9341spi.initter because it contains
+            #   processes (run 'proc' command first).
+            #
+            # Those passes warn and don't run (instead of removing things we
+            # care about), so just let them. We don't want to run "proc" --- it
+            # dovetails poorly with CXXRTL and the result is slower than had we
+            # done nothing at all.  Note the following option taken by
+            # "write_cxxrtl":
+            #
+            #   -noproc
+            #
+            #       don't convert processes to netlists. in most designs,
+            #       converting processes significantly improves evaluation
+            #       performance at the cost of slight increase in compilation
+            #       time.
+            #
+            # Presumably "proc" does it worse, for CXXRTL's purposes.
+            yosys.run(["-q", yosys_script_path], ignore_warnings=True)
 
         cr.add_process(rtlil_to_cc,
             infs=[il_path, yosys_script_path],
@@ -198,7 +219,9 @@ def main(np: Project, args):
         else:
             cmd = [
                 "c++",
-                *cxxflags,
+                # Hard to imagine these flags having any effect.
+                *(["-O3"] if args.optimize.opt_app else ["-O0"]),
+                *(["-g"] if args.debug else []),
                 *cc_o_paths,
                 "-o",
                 exe_o_path,
