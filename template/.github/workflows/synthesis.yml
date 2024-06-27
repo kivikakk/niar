@@ -30,4 +30,4 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Elaborate and synthesise
-      run: python -m ili9341spi build -b ${{ matrix.board }}
+      run: python -m newproject build -b ${{ matrix.board }}
