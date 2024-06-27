@@ -203,6 +203,7 @@ def main(np: Project, args):
         exe_o_path = np.path.build(subdir, np.name)
         cc_o_paths = [o_path for (o_path, _) in cc_odep_paths.values()]
         if platform.uses_zig:
+            # Note that we don't clear zig's cache on args.force.
             cmd = [
                 "zig",
                 "build",
@@ -240,7 +241,8 @@ def main(np: Project, args):
         cmd = [exe_o_path]
         if args.vcd:
             cmd += ["--vcd", args.vcd]
-        cr.run_cmd(cmd, step="run")
+        with logtime(logging.DEBUG, "run"):
+            cr.run_cmd(cmd, step="run")
 
 
 def _make_absolute(path):
