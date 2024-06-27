@@ -1,4 +1,3 @@
-import importlib
 import inspect
 import logging
 import re
@@ -7,7 +6,7 @@ from typing import Optional
 
 from amaranth.build import Platform
 
-from .logger import logger, logtime
+from .logging import logger, logtime
 from .project import Project
 
 __all__ = ["add_arguments"]

@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from amaranth import Elaboratable, Module
 from amaranth_boards.icebreaker import ICEBreakerPlatform
 
-from . import Project, build, logger
+from . import Project, build, logging
 
 calling_test = False
 
@@ -22,8 +22,8 @@ class FixtureProject(Project):
 
 class TestCLI(unittest.TestCase):
     def setUp(self):
-        logger.disable()
-        self.addCleanup(logger.enable)
+        logging.disable()
+        self.addCleanup(logging.enable)
 
     def test_build_works(self):
         parser = ArgumentParser()

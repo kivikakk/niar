@@ -2,19 +2,17 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Any
 
-from amaranth import Elaboratable
 from amaranth._toolchain.yosys import YosysBinary, find_yosys
 from amaranth.back import rtlil
 
 from .build import construct_top
-from .cxxrtl_platform import CxxrtlPlatform
-from .logger import logger, logtime
+from .cmdrunner import CommandRunner
+from .logging import logtime
 from .project import Project
 
 __all__ = ["add_arguments"]
@@ -89,6 +87,12 @@ def add_arguments(np: Project, parser):
         type=str,
         help="output a VCD file",
     )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="don't use cached compilations",
+    )
 
 
 def main(np: Project, args):
@@ -98,138 +102,123 @@ def main(np: Project, args):
 
     platform = np.cxxrtl_target_by_name(args.target)
     design = construct_top(np, platform)
+    cr = CommandRunner(force=args.force)
 
-    cxxrtl_cc_path = np.path.build(f"{np.name}.cc")
     with logtime(logging.DEBUG, "elaboration"):
-        _cxxrtl_convert_with_header(
-            yosys,
-            cxxrtl_cc_path,
-            design,
-            np.name,
-            platform,
-            black_boxes={},
-        )
+        il_path = np.path.build(f"{np.name}.il")
+        rtlil_text = rtlil.convert(design, name=np.name, platform=platform)
+        with open(il_path, "w") as f:
+            f.write(rtlil_text)
 
-    # TODO: bring in Chryse's CompilationUnit stuff to reduce rework.
+        cxxrtl_cc_path = np.path.build(f"{np.name}.cc")
+        yosys_script_path = _make_absolute(np.path.build(f"{np.name}-cxxrtl.ys"))
+        black_boxes = {}
 
-    cc_o_paths = {
-        cxxrtl_cc_path: np.path.build(f"{np.name}.o"),
-    }
-    for path in np.path("cxxrtl").glob("*.cc"):
-        cc_o_paths[path] = np.path.build(f"{path.stem}.o")
+        with open(yosys_script_path, "w") as f:
+            for box_source in black_boxes.values():
+                f.write(f"read_rtlil <<rtlil\n{box_source}\nrtlil\n")
+            f.write(f"read_rtlil {_make_absolute(il_path)}\n")
+            # TODO: do we want to call any opt passes here?
+            f.write(f"write_cxxrtl -header {_make_absolute(cxxrtl_cc_path)}\n")
 
-    cxxflags = CXXFLAGS + [
-        f"-DCLOCK_HZ={int(platform.default_clk_frequency)}",
-        *(["-O3"] if args.optimize.opt_rtl else ["-O0"]),
-        *(["-g"] if args.debug else []),
-    ]
-    if platform.uses_zig:
-        cxxflags += [
-            "-DCXXRTL_INCLUDE_CAPI_IMPL",
-            "-DCXXRTL_INCLUDE_VCD_CAPI_IMPL",
-        ]
+        def rtlil_to_cc():
+            yosys.run(["-q", yosys_script_path])
 
-    procs = []
-    compile_commands = {}
-    for cc_path, o_path in cc_o_paths.items():
-        cmd = [
-            "c++",
-            *cxxflags,
-            "-I" + str(np.path("build")),
-            "-I"
-            + str(yosys.data_dir() / "include" / "backends" / "cxxrtl" / "runtime"),
-            "-c",
-            str(cc_path),
-            "-o",
-            str(o_path),
+        cr.add_process(rtlil_to_cc,
+            infs=[il_path, yosys_script_path],
+            outf=cxxrtl_cc_path)
+        cr.run()
+
+    with logtime(logging.DEBUG, "compilation"):
+        cc_o_paths = {cxxrtl_cc_path: np.path.build(f"{np.name}.o")}
+        for path in np.path("cxxrtl").glob("**/*.cc"):
+            # XXX: we make no effort to distinguish cxxrtl/a.cc and cxxrtl/dir/a.cc.
+            cc_o_paths[path] = np.path.build(f"{path.stem}.o")
+
+        cxxflags = CXXFLAGS + [
+            f"-DCLOCK_HZ={int(platform.default_clk_frequency)}",
+            *(["-O3"] if args.optimize.opt_rtl else ["-O0"]),
+            *(["-g"] if args.debug else []),
         ]
         if platform.uses_zig:
-            cmd = ["zig"] + cmd
-        compile_commands[o_path] = cmd
-        logger.debug(" ".join(str(e) for e in cmd))
-        procs.append((cc_path, subprocess.Popen(cmd)))
+            cxxflags += [
+                "-DCXXRTL_INCLUDE_CAPI_IMPL",
+                "-DCXXRTL_INCLUDE_VCD_CAPI_IMPL",
+            ]
 
-    with open(np.path.build("compile_commands.json"), "w") as f:
-        json.dump(
-            [
-                {
+        depfs = list(np.path("cxxrtl").glob("**/*.h"))
+
+        for cc_path, o_path in cc_o_paths.items():
+            cmd = [
+                "c++",
+                *cxxflags,
+                f"-I{np.path("build")}",
+                f"-I{yosys.data_dir() / "include" / "backends" / "cxxrtl" / "runtime"}",
+                "-c",
+                cc_path,
+                "-o",
+                o_path,
+            ]
+            if platform.uses_zig:
+                cmd = ["zig"] + cmd
+            cr.add_process(cmd, infs=[cc_path] + depfs, outf=o_path)
+
+        with open(np.path.build("compile_commands.json"), "w") as f:
+            json.dump(
+                [{
                     "directory": str(np.path()),
-                    "file": str(file),
+                    "file": file,
                     "arguments": arguments,
-                }
-                for file, arguments in compile_commands.items()
-            ],
-            f,
-        )
+                } for file, arguments in cr.compile_commands.items()],
+                f,
+            )
 
-    failed = []
-    for cc_path, p in procs:
-        if p.wait() != 0:
-            failed.append(cc_path)
+        cr.run()
 
-    if failed:
-        logger.error("Failed to build paths:")
-        for p in failed:
-            logger.error(f"- {p}")
-        raise RuntimeError("failed compile step")
-
-    exe_o_path = np.path.build("cxxrtl")
-    if platform.uses_zig:
-        cmd = [
-            "zig",
-            "build",
-            f"-Dclock_hz={int(platform.default_clk_frequency)}",
-            f"-Dyosys_data_dir={yosys.data_dir()}",
-        ] + [
-            # Zig really wants relative paths.
-            f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths.values()
-        ]
-        if args.optimize.opt_app:
-            cmd += ["-Doptimize=ReleaseFast"]
-        logger.debug(" ".join(str(e) for e in cmd))
-        subprocess.run(cmd, cwd="cxxrtl", check=True)
-        shutil.copy("cxxrtl/zig-out/bin/cxxrtl", exe_o_path)
-    else:
-        cmd = [
-            "c++",
-            *cxxflags,
-            *cc_o_paths.values(),
-            "-o",
-            exe_o_path,
-        ]
-        logger.debug(" ".join(str(e) for e in cmd))
-        subprocess.run(cmd, check=True)
+        exe_o_path = np.path.build("cxxrtl")
+        if platform.uses_zig:
+            cmd = [
+                "zig",
+                "build",
+                f"-Dclock_hz={int(platform.default_clk_frequency)}",
+                f"-Dyosys_data_dir={yosys.data_dir()}",
+            ] + [
+                # Zig really wants relative paths.
+                f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths.values()
+            ]
+            if args.optimize.opt_app:
+                cmd += ["-Doptimize=ReleaseFast"]
+            outf = "cxxrtl/zig-out/bin/cxxrtl"
+            cr.add_process(cmd,
+                infs=cc_o_paths.values() + np.path("cxxrtl").glob("**/*.zig"),
+                outf=outf,
+                chdir="cxxrtl")
+            cr.run()
+            shutil.copy(outf, exe_o_path)
+        else:
+            cmd = [
+                "c++",
+                *cxxflags,
+                *cc_o_paths.values(),
+                "-o",
+                exe_o_path,
+            ]
+            cr.add_process(cmd,
+                infs=cc_o_paths.values(),
+                outf=exe_o_path)
+            cr.run()
 
     if not args.compile:
         cmd = [exe_o_path]
         if args.vcd:
             cmd += ["--vcd", args.vcd]
-        logger.debug(" ".join(str(e) for e in cmd))
-        subprocess.run(cmd, check=True)
+        cr.run_cmd(cmd, step="run")
 
 
-def _cxxrtl_convert_with_header(
-    yosys: YosysBinary,
-    cc_out: Path,
-    design: Elaboratable,
-    name: str,
-    platform: CxxrtlPlatform,
-    *,
-    black_boxes: dict[Any, str],
-):
-    if cc_out.is_absolute():
+def _make_absolute(path):
+    if path.is_absolute():
         try:
-            cc_out = cc_out.relative_to(Path.cwd())
+            path = path.relative_to(Path.cwd())
         except ValueError:
-            raise AssertionError(
-                "cc_out must be relative to cwd for builtin-yosys to write to it"
-            )
-    rtlil_out = f"{cc_out}.il"
-    rtlil_text = rtlil.convert(design, name=name, platform=platform)
-    script = []
-    for box_source in black_boxes.values():
-        script.append(f"read_rtlil <<rtlil\n{box_source}\nrtlil")
-    script.append(f"read_rtlil <<rtlil\n{rtlil_text}\nrtlil")
-    script.append(f"write_rtlil {rtlil_out}")
-    script.append(f"write_cxxrtl -header {cc_out}")
-    yosys.run(["-q", "-"], "\n".join(script))
+            raise AssertionError("path must be relative to cwd for builtin-yosys to access it")
+    return path
