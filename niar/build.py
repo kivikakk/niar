@@ -5,7 +5,9 @@ from functools import partial
 from typing import Optional
 
 from amaranth.build import Platform
+from amaranth.build.run import LocalBuildProducts
 
+from .cmdrunner import CommandRunner
 from .logging import logger, logtime
 from .project import Project
 
@@ -38,6 +40,12 @@ def add_arguments(np: Project, parser):
         action="store_true",
         help="output debug Verilog",
     )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="don't use cached synthesis",
+    )
 
 
 def main(np: Project, args):
@@ -46,33 +54,46 @@ def main(np: Project, args):
     platform = np.target_by_name(args.board)
     design = construct_top(np, platform)
 
+    name = f"{np.name}-{type(platform).__name__}"
+
     with logtime(logging.DEBUG, "elaboration"):
         plan = platform.prepare(
             design,
-            np.name,
+            name,
             debug_verilog=args.verilog,
             yosys_opts="-g",
         )
-    fn = f"{np.name}.il"
+    fn = f"{name}.il"
     size = len(plan.files[fn])
     logger.debug(f"{fn!r}: {size:,} bytes")
 
     with logtime(logging.DEBUG, "synthesis/pnr"):
-        products = plan.execute_local("build")
+        cr = CommandRunner(force=args.force)
+        products = None
+        def execute_build():
+            nonlocal products
+            products = plan.execute_local("build")
+        cr.add_process(execute_build,
+            infs=[np.path.build(fn)],
+            outf=np.path.build(name))
+        cr.run()
+        if products is None:
+            # XXX: good lord.
+            products = LocalBuildProducts(np.path.build())
 
     if args.program:
         with logtime(logging.DEBUG, "programming"):
-            platform.toolchain_program(products, np.name)
+            platform.toolchain_program(products, name)
 
     heading = re.compile(r"^\d+\.\d+\. Printing statistics\.$", flags=re.MULTILINE)
     next_heading = re.compile(r"^\d+\.\d+\. ", flags=re.MULTILINE)
-    log_file_between(logging.INFO, f"build/{np.name}.rpt", heading, next_heading)
+    log_file_between(logging.INFO, f"build/{name}.rpt", heading, next_heading)
 
     logger.info("Device utilisation:")
     heading = re.compile(r"^Info: Device utilisation:$", flags=re.MULTILINE)
     next_heading = re.compile(r"^Info: Placed ", flags=re.MULTILINE)
     log_file_between(
-        logging.INFO, f"build/{np.name}.tim", heading, next_heading, prefix="Info: "
+        logging.INFO, f"build/{name}.tim", heading, next_heading, prefix="Info: "
     )
 
 
