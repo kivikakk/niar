@@ -25,6 +25,9 @@ runs:
       python-version: '3.12'
       cache: pip
 
+  - name: Install client repo pip dependencies
+    run: pip install --editable .
+
   - name: Install pytest
     run: pip install pytest
     shell: bash

@@ -16,9 +16,6 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Install pip dependencies
-      run: pip install --editable .
-
     - uses: kivikakk/niar/setup-action@main
 
     - name: Run tests
