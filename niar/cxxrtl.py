@@ -98,20 +98,22 @@ def add_arguments(np: Project, parser):
 def main(np: Project, args):
     yosys = find_yosys(lambda ver: ver >= (0, 10))
 
-    os.makedirs(np.path.build(), exist_ok=True)
-
     platform = np.cxxrtl_target_by_name(args.target)
     design = construct_top(np, platform)
+
+    subdir = type(platform).__name__
+    os.makedirs(np.path.build(subdir), exist_ok=True)
+
     cr = CommandRunner(force=args.force)
 
     with logtime(logging.DEBUG, "elaboration"):
-        il_path = np.path.build(f"{np.name}.cc.il")
+        il_path = np.path.build(subdir, f"{np.name}.il")
         rtlil_text = rtlil.convert(design, name=np.name, platform=platform)
         with open(il_path, "w") as f:
             f.write(rtlil_text)
 
-        cxxrtl_cc_path = np.path.build(f"{np.name}.cc")
-        yosys_script_path = _make_absolute(np.path.build(f"{np.name}.cc.ys"))
+        cxxrtl_cc_path = np.path.build(subdir, f"{np.name}.cc")
+        yosys_script_path = _make_absolute(np.path.build(subdir, f"{np.name}.ys"))
         black_boxes = {}
 
         with open(yosys_script_path, "w") as f:
@@ -151,11 +153,11 @@ def main(np: Project, args):
         cr.run()
 
     with logtime(logging.DEBUG, "compilation"):
-        cc_odep_paths = {cxxrtl_cc_path: (np.path.build(f"{np.name}.o"), [])}
+        cc_odep_paths = {cxxrtl_cc_path: (np.path.build(subdir, f"{np.name}.o"), [])}
         depfs = list(np.path("cxxrtl").glob("**/*.h"))
         for path in np.path("cxxrtl").glob("**/*.cc"):
             # XXX: we make no effort to distinguish cxxrtl/a.cc and cxxrtl/dir/a.cc.
-            cc_odep_paths[path] = (np.path.build(f"{path.stem}.o"), depfs)
+            cc_odep_paths[path] = (np.path.build(subdir, f"{path.stem}.o"), depfs)
 
         cxxflags = CXXFLAGS + [
             f"-DCLOCK_HZ={int(platform.default_clk_frequency)}",
@@ -172,7 +174,7 @@ def main(np: Project, args):
             cmd = [
                 "c++",
                 *cxxflags,
-                f"-I{np.path("build")}",
+                f"-I{np.path.build(subdir)}",
                 f"-I{yosys.data_dir() / "include" / "backends" / "cxxrtl" / "runtime"}",
                 "-c",
                 cc_path,
@@ -183,6 +185,9 @@ def main(np: Project, args):
                 cmd = ["zig"] + cmd
             cr.add_process(cmd, infs=[cc_path] + dep_paths, outf=o_path)
 
+        # Not feasible to do these per-CXXRTL platform, as clangd won't find
+        # them (and how could it know which to choose?). Worth noting it checks
+        # inside a directory named "build" specifically.
         with open(np.path.build("compile_commands.json"), "w") as f:
             json.dump(
                 [{
@@ -195,7 +200,7 @@ def main(np: Project, args):
 
         cr.run()
 
-        exe_o_path = np.path.build("cxxrtl")
+        exe_o_path = np.path.build(subdir, np.name)
         cc_o_paths = [o_path for (o_path, _) in cc_odep_paths.values()]
         if platform.uses_zig:
             cmd = [
