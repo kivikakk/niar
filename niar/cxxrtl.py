@@ -190,7 +190,7 @@ def main(np: Project, args):
                 cmd += ["-Doptimize=ReleaseFast"]
             outf = "cxxrtl/zig-out/bin/cxxrtl"
             cr.add_process(cmd,
-                infs=cc_o_paths + np.path("cxxrtl").glob("**/*.zig"),
+                infs=cc_o_paths + list(np.path("cxxrtl").glob("**/*.zig")),
                 outf=outf,
                 chdir="cxxrtl")
             cr.run()
