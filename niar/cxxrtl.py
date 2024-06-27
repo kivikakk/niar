@@ -130,10 +130,11 @@ def main(np: Project, args):
         cr.run()
 
     with logtime(logging.DEBUG, "compilation"):
-        cc_o_paths = {cxxrtl_cc_path: np.path.build(f"{np.name}.o")}
+        cc_odep_paths = {cxxrtl_cc_path: (np.path.build(f"{np.name}.o"), [])}
+        depfs = list(np.path("cxxrtl").glob("**/*.h"))
         for path in np.path("cxxrtl").glob("**/*.cc"):
             # XXX: we make no effort to distinguish cxxrtl/a.cc and cxxrtl/dir/a.cc.
-            cc_o_paths[path] = np.path.build(f"{path.stem}.o")
+            cc_odep_paths[path] = (np.path.build(f"{path.stem}.o"), depfs)
 
         cxxflags = CXXFLAGS + [
             f"-DCLOCK_HZ={int(platform.default_clk_frequency)}",
@@ -146,9 +147,7 @@ def main(np: Project, args):
                 "-DCXXRTL_INCLUDE_VCD_CAPI_IMPL",
             ]
 
-        depfs = list(np.path("cxxrtl").glob("**/*.h"))
-
-        for cc_path, o_path in cc_o_paths.items():
+        for cc_path, (o_path, dep_paths) in cc_odep_paths.items():
             cmd = [
                 "c++",
                 *cxxflags,
@@ -161,7 +160,7 @@ def main(np: Project, args):
             ]
             if platform.uses_zig:
                 cmd = ["zig"] + cmd
-            cr.add_process(cmd, infs=[cc_path] + depfs, outf=o_path)
+            cr.add_process(cmd, infs=[cc_path] + dep_paths, outf=o_path)
 
         with open(np.path.build("compile_commands.json"), "w") as f:
             json.dump(
@@ -176,6 +175,7 @@ def main(np: Project, args):
         cr.run()
 
         exe_o_path = np.path.build("cxxrtl")
+        cc_o_paths = [o_path for (o_path, _) in cc_odep_paths.values()]
         if platform.uses_zig:
             cmd = [
                 "zig",
@@ -184,13 +184,13 @@ def main(np: Project, args):
                 f"-Dyosys_data_dir={yosys.data_dir()}",
             ] + [
                 # Zig really wants relative paths.
-                f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths.values()
+                f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths
             ]
             if args.optimize.opt_app:
                 cmd += ["-Doptimize=ReleaseFast"]
             outf = "cxxrtl/zig-out/bin/cxxrtl"
             cr.add_process(cmd,
-                infs=cc_o_paths.values() + np.path("cxxrtl").glob("**/*.zig"),
+                infs=cc_o_paths + np.path("cxxrtl").glob("**/*.zig"),
                 outf=outf,
                 chdir="cxxrtl")
             cr.run()
@@ -199,12 +199,12 @@ def main(np: Project, args):
             cmd = [
                 "c++",
                 *cxxflags,
-                *cc_o_paths.values(),
+                *cc_o_paths,
                 "-o",
                 exe_o_path,
             ]
             cr.add_process(cmd,
-                infs=cc_o_paths.values(),
+                infs=cc_o_paths,
                 outf=exe_o_path)
             cr.run()
 
