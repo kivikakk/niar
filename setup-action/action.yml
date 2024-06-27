@@ -27,6 +27,7 @@ runs:
 
   - name: Install client repo pip dependencies
     run: pip install --editable .
+    shell: bash
 
   - name: Install pytest
     run: pip install pytest
