@@ -54,16 +54,16 @@ def main(np: Project, args):
     platform = np.target_by_name(args.board)
     design = construct_top(np, platform)
 
-    name = f"{np.name}-{type(platform).__name__}"
+    subdir = type(platform).__name__
 
     with logtime(logging.DEBUG, "elaboration"):
         plan = platform.prepare(
             design,
-            name,
+            np.name,
             debug_verilog=args.verilog,
             yosys_opts="-g",
         )
-    fn = f"{name}.il"
+    fn = f"{np.name}.il"
     size = len(plan.files[fn])
     logger.debug(f"{fn!r}: {size:,} bytes")
 
@@ -72,10 +72,13 @@ def main(np: Project, args):
         products = None
         def execute_build():
             nonlocal products
-            products = plan.execute_local("build")
+            products = plan.execute_local(f"build/{subdir}")
+
+        # The outf doesn't exist here; it's only used for the digest name basis.
         cr.add_process(execute_build,
-            infs=[np.path.build(fn)],
-            outf=np.path.build(name))
+            infs=[np.path.build(subdir, fn)],
+            outf=np.path.build(subdir, np.name))
+
         cr.run()
         if products is None:
             # XXX: good lord.
@@ -83,17 +86,17 @@ def main(np: Project, args):
 
     if args.program:
         with logtime(logging.DEBUG, "programming"):
-            platform.toolchain_program(products, name)
+            platform.toolchain_program(products, np.name)
 
     heading = re.compile(r"^\d+\.\d+\. Printing statistics\.$", flags=re.MULTILINE)
     next_heading = re.compile(r"^\d+\.\d+\. ", flags=re.MULTILINE)
-    log_file_between(logging.INFO, f"build/{name}.rpt", heading, next_heading)
+    log_file_between(logging.INFO, np.path.build(subdir, f"{np.name}.rpt"), heading, next_heading)
 
     logger.info("Device utilisation:")
     heading = re.compile(r"^Info: Device utilisation:$", flags=re.MULTILINE)
     next_heading = re.compile(r"^Info: Placed ", flags=re.MULTILINE)
     log_file_between(
-        logging.INFO, f"build/{name}.tim", heading, next_heading, prefix="Info: "
+        logging.INFO, np.path.build(subdir, f"{np.name}.tim"), heading, next_heading, prefix="Info: "
     )
 
 
