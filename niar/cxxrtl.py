@@ -138,7 +138,11 @@ def main(np: Project, args):
             f.write(f"read_rtlil {_make_absolute(il_path)}\n")
             if args.optimize.opt_rtl:
                 f.write("opt\n")
-            f.write(f"write_rtlil {_make_absolute(il_path)}.opt\n")
+                f.write(f"write_rtlil {_make_absolute(il_path)}.opt\n")
+            else:
+                # Allow apples-to-apples comparison of generated RTLIL by
+                # rewriting it with Yosys.
+                f.write(f"write_rtlil {_make_absolute(il_path)}.noopt\n")
             f.write(f"write_cxxrtl -header {_make_absolute(cxxrtl_cc_path)}\n")
 
         def rtlil_to_cc():
