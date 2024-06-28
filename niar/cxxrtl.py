@@ -1,13 +1,13 @@
+import argparse
 import json
 import logging
 import os
 import shutil
-from enum import Enum
+from enum import Enum, nonmember
 from functools import partial
 from pathlib import Path
-from typing import Any
 
-from amaranth._toolchain.yosys import YosysBinary, find_yosys
+from amaranth._toolchain.yosys import find_yosys
 from amaranth.back import rtlil
 
 from .build import construct_top
@@ -29,21 +29,36 @@ CXXFLAGS = [
 
 
 class _Optimize(Enum):
-    none = "none"
     rtl = "rtl"
-    app = "app"
-    both = "both"
+    code = "code"
+    none = "none"
+    all = "all"
 
     def __str__(self):
         return self.value
 
-    @property
-    def opt_rtl(self) -> bool:
-        return self in (self.rtl, self.both)
+    @nonmember
+    class ArgparseAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            match (values, namespace.optimize):
+                case (_Optimize.rtl, _Optimize.code) | (_Optimize.code, _Optimize.rtl):
+                    # Choosing rtl or code when the other is chosen becomes all.
+                    newval = _Optimize.all
+                case _:
+                    # Other cases are:
+                    #   Choosing all or none always sets it, regardless of old value.
+                    #   Choosing rtl or code when old value is all/none/same always sets it.
+                    newval = values
+
+            setattr(namespace, self.dest, newval)
 
     @property
-    def opt_app(self) -> bool:
-        return self in (self.app, self.both)
+    def opt_rtl(self) -> bool:
+        return self in (self.rtl, self.all)
+
+    @property
+    def opt_code(self) -> bool:
+        return self in (self.code, self.all)
 
 
 def add_arguments(np: Project, parser):
@@ -69,10 +84,11 @@ def add_arguments(np: Project, parser):
     parser.add_argument(
         "-O",
         "--optimize",
+        action=_Optimize.ArgparseAction,
         type=_Optimize,
         choices=_Optimize,
-        help="build with optimizations (default: rtl)",
-        default=_Optimize.rtl,
+        default=_Optimize.all,
+        help="build with optimizations — may be specified multiple times. default if unspecified: all.",
     )
     parser.add_argument(
         "-d",
@@ -161,7 +177,7 @@ def main(np: Project, args):
 
         cxxflags = CXXFLAGS + [
             f"-DCLOCK_HZ={int(platform.default_clk_frequency)}",
-            *(["-O3"] if args.optimize.opt_rtl else ["-O0"]),
+            *(["-O3"] if args.optimize.opt_code else ["-O0"]),
             *(["-g"] if args.debug else []),
         ]
         if platform.uses_zig:
@@ -213,7 +229,7 @@ def main(np: Project, args):
                 # Zig really wants relative paths.
                 f"-Dcxxrtl_o_path=../{p.relative_to(np.path())}" for p in cc_o_paths
             ]
-            if args.optimize.opt_app:
+            if args.optimize.opt_code:
                 cmd += ["-Doptimize=ReleaseFast"]
             outf = "cxxrtl/zig-out/bin/cxxrtl"
             cr.add_process(cmd,
@@ -226,7 +242,7 @@ def main(np: Project, args):
             cmd = [
                 "c++",
                 # Hard to imagine these flags having any effect.
-                *(["-O3"] if args.optimize.opt_app else ["-O0"]),
+                *(["-O3"] if args.optimize.opt_code else ["-O0"]),
                 *(["-g"] if args.debug else []),
                 *cc_o_paths,
                 "-o",
