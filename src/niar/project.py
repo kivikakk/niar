@@ -101,8 +101,16 @@ class Project:
 
     def __init_subclass__(cls):
         # We expect to be called from project-root/module/__init.py__ or similar;
-        # self.origin is project-root.
-        cls.origin = Path(sys._getframe(1).f_code.co_filename).parent.parent.absolute()
+        # cls.origin is project-root. Keep going up until we find pyproject.toml.
+        origin = Path(sys._getframe(1).f_code.co_filename).absolute().parent
+        while True:
+            if (origin / "pyproject.toml").is_file():
+                cls.origin = origin
+                break
+            if not any(origin.parents):
+                assert False, "could not find pyproject.toml"
+            origin = origin.parent
+
         extras = cls.__dict__.keys() - {"__module__", "__doc__", "origin"}
         for prop in cls.PROPS:
             prop.validate(cls)
