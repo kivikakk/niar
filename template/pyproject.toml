@@ -8,7 +8,7 @@ authors = [
 dependencies = [
     "amaranth >= 0.5, < 0.7",
     "amaranth-boards",
-    "niar >= 0.1",
+    "niar >= 0.1.1",
 ]
 requires-python = ">=3.8"
 license = {text = "BSD-2-Clause"}
@@ -16,3 +16,7 @@ license = {text = "BSD-2-Clause"}
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[tool.pytest.ini_options]
+addopts = ["-n", "auto"]
+testpaths = ["tests"]

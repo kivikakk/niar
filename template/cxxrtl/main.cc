@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   // ledr should be low or high according to 'expected', where each element
   // represents 1/4th of a second. ledg should always be high.
   //
-  // This mirrors TestTop in Python.
+  // This mirrors test_blinks in Python.
   int rc = 0;
   bool done = false;
 
