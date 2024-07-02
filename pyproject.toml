@@ -26,7 +26,7 @@ distribution = true
 test = [
     "pytest>=8.2.2",
     "pytest-xdist>=3.6.1",
-    "amaranth-boards @ git+https://github.com/kivikakk/amaranth-boards@main",
+    "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@main",
 ]
 
 [tool.pytest.ini_options]

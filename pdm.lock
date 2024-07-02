@@ -5,11 +5,11 @@
 groups = ["default", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.2"
-content_hash = "sha256:dfce41eadf41522ec513efd6be5f6e9b039e9fc2fc6eac1eecb921d5bc9925f5"
+content_hash = "sha256:256cf41c0adcfe76e6d6f5d94c852d1df928c19788a6ea7c6b451e94c99e6d12"
 
 [[package]]
 name = "amaranth"
-version = "0.6.0.dev26"
+version = "0.5.0"
 requires_python = "~=3.8"
 summary = "Amaranth hardware definition language"
 groups = ["default", "test"]
@@ -19,18 +19,22 @@ dependencies = [
     "jschon~=0.11.1",
     "pyvcd<0.5,>=0.2.2",
 ]
+files = [
+    {file = "amaranth-0.5.0-py3-none-any.whl", hash = "sha256:3d05d38864d6e88e40db93ed29ac0bee7f2a351d12810d4414f5b65a7cb0e23f"},
+    {file = "amaranth-0.5.0.tar.gz", hash = "sha256:9d2a1893d6ac938e0ff3983892eff5b56033e06691cc89674eb8d500dc46cdf6"},
+]
 
 [[package]]
 name = "amaranth-boards"
-version = "0.1.dev249"
+version = "0.1.dev248"
 requires_python = "~=3.8"
-git = "https://github.com/kivikakk/amaranth-boards"
+git = "https://github.com/amaranth-lang/amaranth-boards"
 ref = "main"
-revision = "ca817ca529963a0de00a6b0fc0839be3c6e8cf01"
+revision = "ad5a939b86020c53e0e193620b96ca19d5960192"
 summary = "Board and connector definitions for Amaranth HDL"
 groups = ["test"]
 dependencies = [
-    "amaranth<0.7,>=0.4",
+    "amaranth<0.6,>=0.4",
 ]
 
 [[package]]
@@ -49,14 +53,18 @@ files = [
 
 [[package]]
 name = "amaranth"
-version = "0.6.0.dev26"
+version = "0.5.0"
 extras = ["builtin-yosys"]
 requires_python = "~=3.8"
 summary = "Amaranth hardware definition language"
 groups = ["default"]
 dependencies = [
     "amaranth-yosys>=0.40",
-    "amaranth==0.6.0.dev26",
+    "amaranth==0.5.0",
+]
+files = [
+    {file = "amaranth-0.5.0-py3-none-any.whl", hash = "sha256:3d05d38864d6e88e40db93ed29ac0bee7f2a351d12810d4414f5b65a7cb0e23f"},
+    {file = "amaranth-0.5.0.tar.gz", hash = "sha256:9d2a1893d6ac938e0ff3983892eff5b56033e06691cc89674eb8d500dc46cdf6"},
 ]
 
 [[package]]
