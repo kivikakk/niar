@@ -13,36 +13,11 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Checkout Niar
-    uses: actions/checkout@v4
-    with:
-      repository: kivikakk/niar
-      path: setup-niar-out/niar
+  - name: Setup PDM
+    uses: pdm-project/setup-pdm@v4
 
-  - name: Install Python 3.12
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.12'
-      cache: pip
-
-  - name: Install client repo pip dependencies
-    run: pip install --editable .
-    shell: bash
-
-  - name: Install pytest
-    run: pip install pytest pytest-xdist
-    shell: bash
-
-  - name: Install niar
-    run: cd setup-niar-out/niar && pip install -e .
-    shell: bash
-
-  - name: Install amaranth-stdio
-    run: pip install --no-deps git+https://github.com/amaranth-lang/amaranth-stdio.git
-    shell: bash
-
-  - name: Install amaranth-boards
-    run: pip install --no-deps git+https://github.com/amaranth-lang/amaranth-boards.git
+  - name: Install Python dependencies
+    run: pdm install
     shell: bash
 
   - name: Install OSS CAD Suite
