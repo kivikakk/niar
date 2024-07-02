@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
 
-__all__ = ["logger", "logtime", "enable", "disable"]
+__all__ = ["logger", "logtime"]
 
 logging.basicConfig(
     format="[%(asctime)s] %(name)s: %(levelname)s: %(message)s",
@@ -27,11 +27,3 @@ def logtime(level: int, activity: str, /, fail_level: Optional[int] = None):
     else:
         finish = datetime.now()
         logger.log(level, "%s finished in %s", activity, finish - start)
-
-
-def disable():
-    logger.disabled = True
-
-
-def enable():
-    logger.disabled = False
