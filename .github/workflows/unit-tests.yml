@@ -19,8 +19,13 @@ jobs:
     - name: Setup PDM
       uses: pdm-project/setup-pdm@v4
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: pdm install
+
+    - name: Install OSS CAD Suite
+      uses: YosysHQ/setup-oss-cad-suite@v3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
       run: .venv/bin/pytest
