@@ -5,15 +5,12 @@
 groups = ["default", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.2"
-content_hash = "sha256:7ced02b88ce69e03d516a9aa6b3445b6e9817c45c75d221edf8efb3e2f29d7b5"
+content_hash = "sha256:dfce41eadf41522ec513efd6be5f6e9b039e9fc2fc6eac1eecb921d5bc9925f5"
 
 [[package]]
 name = "amaranth"
 version = "0.6.0.dev26"
 requires_python = "~=3.8"
-git = "https://github.com/amaranth-lang/amaranth.git"
-ref = "main"
-revision = "eefca8323028a0616d2b50019d119fcf7dd3d200"
 summary = "Amaranth hardware definition language"
 groups = ["default", "test"]
 dependencies = [
@@ -55,14 +52,11 @@ name = "amaranth"
 version = "0.6.0.dev26"
 extras = ["builtin-yosys"]
 requires_python = "~=3.8"
-git = "https://github.com/amaranth-lang/amaranth.git"
-ref = "main"
-revision = "eefca8323028a0616d2b50019d119fcf7dd3d200"
 summary = "Amaranth hardware definition language"
 groups = ["default"]
 dependencies = [
-    "amaranth @ git+https://github.com/amaranth-lang/amaranth.git@eefca8323028a0616d2b50019d119fcf7dd3d200",
     "amaranth-yosys>=0.40",
+    "amaranth==0.6.0.dev26",
 ]
 
 [[package]]
