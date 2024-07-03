@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 (unreleased)
+
+Fixed:
+
+* python: use PDM and declare dependencies correctly.
+* build: use generated IL to calculate digest, not what's on disk.
+
 ## 0.1.1
 
 New:
