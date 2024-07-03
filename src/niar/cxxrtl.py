@@ -174,7 +174,7 @@ def main(np: Project, args):
 
     with logtime(logging.DEBUG, "compilation"):
         cc_odep_paths = {cxxrtl_cc_path: (np.path.build(subdir, f"{np.name}.o"), [])}
-        depfs = list(np.path("cxxrtl").glob("**/*.h"))
+        depfs = list(np.path("cxxrtl").glob("**/*.h")) # XXX: the actual part that instantiates the top-level will depend on its .h and doesn't update. We need actual dependency tracking.
         for path in np.path("cxxrtl").glob("**/*.cc"):
             # XXX: we make no effort to distinguish cxxrtl/a.cc and cxxrtl/dir/a.cc.
             cc_odep_paths[path] = (np.path.build(subdir, f"{path.stem}.o"), depfs)
