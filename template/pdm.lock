@@ -39,7 +39,7 @@ dependencies = [
 
 [[package]]
 name = "amaranth-yosys"
-version = "0.40.0.0.post96"
+version = "0.40.0.0.post97"
 requires_python = "~=3.8"
 summary = "Specialized WebAssembly build of Yosys used by Amaranth HDL"
 groups = ["default"]
@@ -48,7 +48,7 @@ dependencies = [
     "wasmtime<23,>=1",
 ]
 files = [
-    {file = "amaranth_yosys-0.40.0.0.post96-py3-none-any.whl", hash = "sha256:d4d7b0c40365f00d5090433762d81134209ca69f655ac74bc2e50decd6675255"},
+    {file = "amaranth_yosys-0.40.0.0.post97-py3-none-any.whl", hash = "sha256:b263483bb71c89192219f4991f14b5bd2d1ab1eecf7fd9df41cd7dca28b8a545"},
 ]
 
 [[package]]
