@@ -14,7 +14,7 @@ class CompilationUnit:
             self.cmd = cmd
         else:
             self.cmd = [str(el) for el in cmd]
-        self.infs  = [str(p) for p in infs]
+        self.infs  = infs
         self.outf  = str(outf) if outf else None
         self.chdir = chdir
 
@@ -50,14 +50,12 @@ class CompilationUnit:
         def digest_str(s):
             digest_bytes(s.encode())
 
-        sorted_in_paths = list(self.infs)
-        sorted_in_paths.sort()
+        infs = self.process_infs()
 
-        digest_int(len(sorted_in_paths))
-        for in_path in sorted_in_paths:
+        digest_int(len(infs))
+        for in_path in sorted(infs.keys()):
             digest_str(in_path)
-            with open(in_path, "rb") as f:
-                digest_bytes(f.read())
+            digest_bytes(infs[in_path])
 
         if not inspect.isfunction(self.cmd):
             digest_int(len(self.cmd))
@@ -66,7 +64,18 @@ class CompilationUnit:
 
         return m.hexdigest()
 
-
+    def process_infs(self):
+        r = {}
+        for inf in self.infs:
+            if isinstance(inf, dict):
+                for k, v in inf.items():
+                    if isinstance(v, str):
+                        v = v.encode()
+                    r[str(k)] = v
+            else:
+                with open(inf, "rb") as f:
+                    r[str(inf)] = f.read()
+        return r
 class CommandRunner:
     cus: list[CompilationUnit]
 

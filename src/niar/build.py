@@ -76,7 +76,7 @@ def main(np: Project, args):
 
         # The outf doesn't exist here; it's only used for the digest name basis.
         cr.add_process(execute_build,
-            infs=[np.path.build(subdir, fn)],
+            infs=[{np.path.build(subdir, fn): plan.files[fn]}],
             outf=np.path.build(subdir, np.name))
 
         cr.run()
