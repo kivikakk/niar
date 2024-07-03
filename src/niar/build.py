@@ -57,15 +57,16 @@ def main(np: Project, args):
     subdir = type(platform).__name__
 
     with logtime(logging.DEBUG, "elaboration"):
-        plan = platform.prepare(
-            design,
-            np.name,
-            debug_verilog=args.verilog,
-            yosys_opts="-g",
-        )
-    fn = f"{np.name}.il"
-    size = len(plan.files[fn])
-    logger.debug(f"{fn!r}: {size:,} bytes")
+        prepare_kwargs = {
+            "debug_verilog": args.verilog,
+            "yosys_opts": "-g",
+        }
+        prepare_kwargs.update(getattr(platform, "prepare_kwargs", {}))
+        plan = platform.prepare(design, np.name, **prepare_kwargs)
+
+    il_fn = f"{np.name}.il"
+    il_size = len(plan.files[il_fn])
+    logger.debug(f"{il_fn!r}: {il_size:,} bytes")
 
     with logtime(logging.DEBUG, "synthesis/pnr"):
         cr = CommandRunner(force=args.force)
