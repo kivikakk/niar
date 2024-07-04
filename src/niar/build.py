@@ -92,17 +92,36 @@ def main(np: Project, args):
         with logtime(logging.DEBUG, "programming"):
             platform.toolchain_program(products, np.name)
 
+    yosys_report = np.path.build(subdir, f"{np.name}.rpt")
     heading = re.compile(r"^\d+\.\d+\. Printing statistics\.$", flags=re.MULTILINE)
     next_heading = re.compile(r"^\d+\.\d+\. ", flags=re.MULTILINE)
-    log_file_between(logging.INFO, np.path.build(subdir, f"{np.name}.rpt"), heading, next_heading)
+    log_file_between(logging.INFO, yosys_report, heading, next_heading)
 
+    nextpnr_report = np.path.build(subdir, f"{np.name}.tim")
     logger.info("Device utilisation:")
     heading = re.compile(r"^Info: Device utilisation:$", flags=re.MULTILINE)
     next_heading = re.compile(r"^Info: Placed ", flags=re.MULTILINE)
-    log_file_between(
-        logging.INFO, np.path.build(subdir, f"{np.name}.tim"), heading, next_heading, prefix="Info: "
-    )
+    log_file_between(logging.INFO, nextpnr_report, heading, next_heading, prefix="Info: ")
 
+    timing_report = None
+    max_freq = re.compile(r"^Info: Max frequency for clock '", flags=re.MULTILINE)
+    slack_histo = re.compile(r"^Info: Slack histogram:", flags=re.MULTILINE)
+    with open(nextpnr_report, "r") as f:
+        for line in f:
+            if max_freq.match(line):
+                timing_report = [line]
+            elif timing_report is not None:
+                timing_report.append(line)
+
+    if timing_report is None:
+        logger.warn("Couldn't extract timing information from nextpnr log")
+    else:
+        for line in timing_report:
+            if slack_histo.match(line):
+                break
+            line = line.rstrip()
+            line = line.removeprefix("Info: ")
+            logger.log(logging.INFO, line)
 
 def construct_top(np: Project, platform: Platform, **kwargs):
     sig = inspect.signature(np.top)
