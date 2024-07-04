@@ -19,6 +19,7 @@ Fixed:
 * python: use PDM and declare dependencies correctly.
 * build: use generated IL to calculate digest, not what's on disk.
 * build: synthesis depends on the yosys script too, not just IL.
+* build: fix path used with cached synthesis when programming.
 
 ## 0.1.1
 

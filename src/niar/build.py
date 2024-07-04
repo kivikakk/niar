@@ -85,7 +85,7 @@ def main(np: Project, args):
         cr.run()
         if products is None:
             # XXX: good lord.
-            products = LocalBuildProducts(np.path.build())
+            products = LocalBuildProducts(np.path.build(subdir))
 
     if args.program:
         with logtime(logging.DEBUG, "programming"):
