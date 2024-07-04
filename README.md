@@ -6,7 +6,7 @@ using [CXXRTL], optionally with [Zig] and [zxxrtl].
 See the [template project] for usage, [Sae] for what I'm working on right now,
 and [ili9341spi] for a complete example with Zig.
 
-See the [CHANGELOG] for updates.
+See the [CHANGELOG] for updates and what's yet to be released.
 
 [Amaranth]: https://amaranth-lang.org/
 [CXXRTL]: https://yosyshq.readthedocs.io/projects/yosys/en/latest/cmd/write_cxxrtl.html

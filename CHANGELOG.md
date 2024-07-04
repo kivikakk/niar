@@ -1,4 +1,4 @@
-# Changelog
+# niar
 
 ## 0.1.2 (unreleased)
 
