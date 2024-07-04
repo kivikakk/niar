@@ -75,13 +75,12 @@ def main(np: Project, args):
             nonlocal products
             products = plan.execute_local(f"build/{subdir}")
 
-        # The outf doesn't exist here; it's only used for the digest name basis.
-
         # This is specific to toolchains that use Yosys, but I'm unlikely to use anything else ...
         deps = [f"{np.name}.il", f"{np.name}.ys"]
         cr.add_process(execute_build,
             infs=[{np.path.build(subdir, fn): plan.files[fn] for fn in deps}],
             outf=np.path.build(subdir, np.name))
+        #   ^-- The outf doesn't exist here; it's only needed/used as basis for the digest name.
 
         cr.run()
         if products is None:
