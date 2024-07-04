@@ -1,6 +1,6 @@
 [project]
 name = "niar"
-version = "0.1.1"
+dynamic = ["version"]
 description = "A small framework for building projects with Amaranth"
 authors = [
     { name = "Asherah Connor", email = "ashe@kivikakk.ee" },
@@ -21,6 +21,9 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.version]
+source = "scm"
 
 [tool.pdm.dev-dependencies]
 test = [
