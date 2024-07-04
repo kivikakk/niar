@@ -113,6 +113,7 @@ def add_arguments(np: Project, parser):
 
 def main(np: Project, args):
     yosys = find_yosys(lambda ver: ver >= (0, 10))
+    args.force = True # XXX: dependency detection is broken and results in bugs that aren't your fault.
 
     platform = np.cxxrtl_target_by_name(args.target)
     design = construct_top(np, platform)
