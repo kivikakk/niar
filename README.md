@@ -1,5 +1,7 @@
 # Niar
 
+<https://sr.ht/~kivikakk/niar>
+
 A small framework for building projects with [Amaranth]. Provides support for
 using [CXXRTL], optionally with [Zig] and [zxxrtl].
 
