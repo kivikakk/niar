@@ -1,1 +1,2 @@
 * Write a flake to allow testing on builds.sr.ht: https://man.sr.ht/builds.sr.ht/compatibility.md#nixos
+  * Same for template project/users.
