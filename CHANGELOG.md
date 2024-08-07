@@ -42,6 +42,6 @@ Fixed:
 
 * cxxrtl: correctly disable when not used.
 
-## 0.1
+## 0.1.0
 
 Initial release.
