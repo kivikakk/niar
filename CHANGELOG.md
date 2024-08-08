@@ -2,6 +2,10 @@
 
 ## 0.1.3 (unreleased)
 
+New:
+
+* project: `NIAR_WORKING_DIRECTORY` can be used to override the origin.
+
 ## 0.1.2
 
 New:
