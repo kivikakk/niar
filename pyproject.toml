@@ -1,19 +1,19 @@
 [project]
 name = "niar"
-dynamic = ["version"]
+version = "0.1.3"
 description = "A small framework for building projects with Amaranth"
 authors = [
     { name = "Asherah Connor", email = "ashe@kivikakk.ee" },
 ]
 dependencies = [
-    "amaranth[builtin-yosys] >= 0.5",
+    "amaranth[builtin-yosys] @ git+https://github.com/amaranth-lang/amaranth@bc2e90913311e326d8f396e33d7a1c7f6eef6e4e",
 ]
 requires-python = ">=3.8"
 license = { text = "BSD-2-Clause" }
 readme = "README.md"
 
 [project.urls]
-Homepage = "https://github.com/kivikakk/niar"
+Homepage = "https://sr.ht/~kivikakk/niar"
 
 [build-system]
 requires = ["pdm-backend"]
@@ -22,16 +22,11 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = true
 
-[tool.pdm.version]
-source = "scm"
-
 [tool.pdm.dev-dependencies]
 test = [
     "pytest>=8.2.2",
-    "pytest-xdist>=3.6.1",
-    "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@main",
+    "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@19b97324ecf9111c5d16377af79f82aad761c476",
 ]
 
 [tool.pytest.ini_options]
-addopts = ["--import-mode=importlib", "-n", "auto"]
 testpaths = ["tests"]

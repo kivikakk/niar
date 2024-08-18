@@ -102,6 +102,10 @@ def main(np: Project, args):
     next_heading = re.compile(r"^Info: Placed ", flags=re.MULTILINE)
     log_file_between(logging.INFO, nextpnr_report, heading, next_heading, prefix="Info: ")
 
+    # TODO:
+    # Info: Critical path report for cross-domain path 'posedge clk' -> '<async>':
+    # ...
+    # Info: 2.3 ns logic, 6.5 ns routing
     timing_report = None
     max_freq = re.compile(r"^Info: Max frequency for clock '", flags=re.MULTILINE)
     slack_histo = re.compile(r"^Info: Slack histogram:", flags=re.MULTILINE)
@@ -113,7 +117,7 @@ def main(np: Project, args):
                 timing_report.append(line)
 
     if timing_report is None:
-        logger.warn("Couldn't extract timing information from nextpnr log")
+        logger.warning("Couldn't extract timing information from nextpnr log")
     else:
         for line in timing_report:
             if slack_histo.match(line):
