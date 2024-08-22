@@ -99,7 +99,7 @@
         buildInputs =
           [
             pkgs.python3
-            pkgs.pdm
+            pkgs.uv
           ]
           ++ toolchain-pkgs;
       };

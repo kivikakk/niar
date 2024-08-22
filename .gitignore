@@ -2,4 +2,4 @@ __pycache__
 /build
 /dist
 /result
-.pdm-python
+*.egg-info
