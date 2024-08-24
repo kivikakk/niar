@@ -136,6 +136,11 @@ def main(np: Project, args):
         with open(yosys_script_path, "w") as f:
             for box_source in black_boxes.values():
                 f.write(f"read_rtlil <<rtlil\n{box_source}\nrtlil\n")
+            for p in np.externals:
+                f.write(f"read_verilog <<niar_read_verilog\n")
+                with open(np.path(p), 'r') as r:
+                    f.write(r.read())
+                f.write(f"\nniar_read_verilog\n")
             f.write(f"read_rtlil {_make_absolute(il_path)}\n")
             if args.optimize.opt_rtl:
                 f.write("opt\n")
