@@ -82,7 +82,8 @@ class Project:
     name: str
     top: type[Elaboratable]
     targets: list[type[Platform]]
-    cxxrtl_targets: Optional[list[type[CxxrtlPlatform]]]
+    cxxrtl_targets: list[type[CxxrtlPlatform]] = []
+    externals: list[str] = []
 
     origin: Path
 
@@ -149,7 +150,7 @@ class Project:
         raise KeyError(f"unknown target {name!r}")
 
     def cxxrtl_target_by_name(self, name: str) -> CxxrtlPlatform:
-        for t in self.cxxrtl_targets or []:
+        for t in self.cxxrtl_targets:
             if t.__name__ == name:
                 return t()
         raise KeyError(f"unknown CXXRTL target {name!r}")

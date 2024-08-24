@@ -62,6 +62,9 @@ def main(np: Project, args):
             "yosys_opts": "-g",
         }
         prepare_kwargs.update(getattr(platform, "prepare_kwargs", {}))
+        for p in np.externals:
+            with open(np.path(p), 'rb') as f:
+                platform.add_file(p, f)
         plan = platform.prepare(design, np.name, **prepare_kwargs)
 
     il_fn = f"{np.name}.il"
