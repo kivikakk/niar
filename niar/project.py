@@ -19,6 +19,7 @@ class Prop:
         description: str,
         required: bool,
         isinstance: Optional[type] = None,
+        isinstance_list: Optional[type] = None,
         issubclass: Optional[type] = None,
         issubclass_list: Optional[type] = None,
     ):
@@ -26,13 +27,17 @@ class Prop:
         self.description = description
         self.required = required
         self.isinstance = isinstance
+        self.isinstance_list = isinstance_list
         self.issubclass = issubclass
         self.issubclass_list = issubclass_list
 
     def validate(self, project):
-        assert not (
-            self.issubclass and self.issubclass_list
-        ), "may only define one of issubclass and issubclass_list"
+        assert len(list(filter(None, [
+            self.isinstance,
+            self.isinstance_list,
+            self.issubclass,
+            self.issubclass_list,
+        ]))) == 1, "must define exactly one of the is... parameters"
 
         if self.required:
             assert hasattr(project, self.name), (
@@ -49,6 +54,14 @@ class Prop:
                 f"{self.name!r} ({self.description}) should an instance of "
                 f"{self.isinstance!r}, but is {attr!r}"
             )
+        if self.isinstance_list:
+            assert isinstance(attr, list)
+            for elem in attr:
+                assert isinstance(elem, self.isinstance_list), (
+                    f"{project.__module__}.{project.__class__.__qualname__} property "
+                    f"{self.name!r} ({self.description}) should a list of instances of "
+                    f"{self.isinstanc_list!r}, but has element {elem!r}"
+                )
         if self.issubclass:
             assert issubclass(attr, self.issubclass), (
                 f"{project.__module__}.{project.__class__.__qualname__} property "
@@ -61,7 +74,7 @@ class Prop:
                 assert issubclass(elem, self.issubclass_list), (
                     f"{project.__module__}.{project.__class__.__qualname__} property "
                     f"{self.name!r} ({self.description}) should be a list of subclasses of "
-                    f"{self.issubclass!r}, but has element {attr!r}"
+                    f"{self.issubclass_list!r}, but has element {elem!r}"
                 )
 
 
@@ -97,6 +110,12 @@ class Project:
             description="a list of niar.CxxrtlPlatform classes the elaboratable is targetted for",
             required=False,
             issubclass_list=CxxrtlPlatform,
+        ),
+        Prop(
+            "externals",
+            description="a list of Verilog and RTLIL project paths to include in the build",
+            required=False,
+            isinstance_list=str,
         ),
     ]
 
