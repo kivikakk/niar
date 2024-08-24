@@ -130,26 +130,29 @@ def main(np: Project, args):
             f.write(rtlil_text)
 
         cxxrtl_cc_path = np.path.build(subdir, f"{np.name}.cc")
-        yosys_script_path = _make_absolute(np.path.build(subdir, f"{np.name}.ys"))
+        yosys_script_path = _make_yosys_relative(np.path.build(subdir, f"{np.name}.ys"))
         black_boxes = {}
+        externals_paths = []
 
         with open(yosys_script_path, "w") as f:
             for box_source in black_boxes.values():
                 f.write(f"read_rtlil <<rtlil\n{box_source}\nrtlil\n")
             for p in np.externals:
-                f.write(f"read_verilog <<niar_read_verilog\n")
-                with open(np.path(p), 'r') as r:
-                    f.write(r.read())
-                f.write(f"\nniar_read_verilog\n")
-            f.write(f"read_rtlil {_make_absolute(il_path)}\n")
+                target = np.path.build(subdir, "externals", p)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with open(np.path(p), 'rb') as r:
+                    target.write_bytes(r.read())
+                externals_paths.append(target)
+                f.write(f"read_verilog {_make_yosys_relative(target)}\n")
+            f.write(f"read_rtlil {_make_yosys_relative(il_path)}\n")
             if args.optimize.opt_rtl:
                 f.write("opt\n")
-                f.write(f"write_rtlil {_make_absolute(il_path)}.opt\n")
+                f.write(f"write_rtlil {_make_yosys_relative(il_path)}.opt\n")
             else:
                 # Allow apples-to-apples comparison of generated RTLIL by
                 # rewriting it with Yosys.
-                f.write(f"write_rtlil {_make_absolute(il_path)}.noopt\n")
-            f.write(f"write_cxxrtl -header {_make_absolute(cxxrtl_cc_path)}\n")
+                f.write(f"write_rtlil {_make_yosys_relative(il_path)}.noopt\n")
+            f.write(f"write_cxxrtl -header {_make_yosys_relative(cxxrtl_cc_path)}\n")
 
         def rtlil_to_cc():
             # "opt" without "proc" generates a bunch of warnings like:
@@ -174,7 +177,7 @@ def main(np: Project, args):
             yosys.run(["-q", yosys_script_path], ignore_warnings=True)
 
         cr.add_process(rtlil_to_cc,
-            infs=[il_path, yosys_script_path],
+            infs=[il_path, yosys_script_path] + externals_paths,
             outf=cxxrtl_cc_path)
         cr.run()
 
@@ -271,7 +274,7 @@ def main(np: Project, args):
             cr.run_cmd(cmd, step="run")
 
 
-def _make_absolute(path):
+def _make_yosys_relative(path):
     if path.is_absolute():
         try:
             path = path.relative_to(Path.cwd())
