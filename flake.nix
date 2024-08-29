@@ -19,13 +19,14 @@
       python = let
         packageOverrides = final: prev: {
           amaranth = prev.amaranth.overridePythonAttrs {
-            version = "0.6.0.dev45";
+            version = "0.6.0.dev52";
             src = pkgs.fetchFromGitHub {
-              owner = "amaranth-lang";
+              owner = "kivikakk";
               repo = "amaranth";
-              rev = "bc2e90913311e326d8f396e33d7a1c7f6eef6e4e";
-              hash = "sha256-WkZl3XcTfBXoQ/ZigyW/wIGge5PlRPmpuOIcjLEoVTM=";
+              rev = "f8ea807a9108a99ec801d1f1e4b8e63019ec82ec";
+              hash = "sha256-A46CMWGvqUFTp3geFFccUM9M7iECmNndzWm2GxA8XbE";
             };
+            doCheck = false; # uninit'd mem breaks lots of tests.
           };
 
           amaranth-boards = prev.amaranth-boards.overridePythonAttrs rec {
@@ -78,6 +79,8 @@
 
         doCheck = true;
         nativeCheckInputs = [python.pkgs.pytestCheckHook] ++ toolchain-pkgs;
+
+        dontCheckRuntimeDeps = 1; # amaranth 0.6.0.devX doesn't match anything.
       };
 
       devShells.default = pkgs.mkShell {
