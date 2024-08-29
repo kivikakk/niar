@@ -6,7 +6,7 @@ authors = [
     { name = "Asherah Connor", email = "ashe@kivikakk.ee" },
 ]
 dependencies = [
-    "amaranth[builtin-yosys] @ git+https://github.com/amaranth-lang/amaranth@bc2e90913311e326d8f396e33d7a1c7f6eef6e4e",
+    "amaranth[builtin-yosys] >= 0.5",
 ]
 requires-python = ">=3.8"
 license = { text = "BSD-2-Clause" }
