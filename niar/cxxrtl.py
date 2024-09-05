@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import shutil
+import sys
 from enum import Enum, nonmember
 from functools import partial
 from pathlib import Path
@@ -12,8 +13,9 @@ from amaranth.back import rtlil
 
 from .build import construct_top
 from .cmdrunner import CommandRunner
-from .logging import logtime
+from .logging import logtime, logger
 from .project import Project
+
 
 __all__ = ["add_arguments"]
 
@@ -271,7 +273,11 @@ def main(np: Project, args):
         if args.vcd:
             cmd += ["--vcd", args.vcd]
         with logtime(logging.DEBUG, "run"):
-            cr.run_cmd(cmd, step="run")
+            try:
+                cr.run_cmd(cmd, step="run")
+            except KeyboardInterrupt:
+                print(file=sys.stderr)
+                logger.log(logging.INFO, "aborting on KeyboardInterrupt")
 
 
 def _make_yosys_relative(path):
