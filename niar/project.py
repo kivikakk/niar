@@ -6,6 +6,7 @@ from typing import Optional
 from amaranth import Elaboratable
 from amaranth.build import Platform
 
+from .command import Command
 from .cxxrtl_platform import CxxrtlPlatform
 
 __all__ = ["Project"]
@@ -84,6 +85,7 @@ class Project:
     targets: list[type[Platform]]
     cxxrtl_targets: list[type[CxxrtlPlatform]] = []
     externals: list[str] = []
+    commands: list[Command] = []
 
     origin: Path
 
@@ -117,6 +119,12 @@ class Project:
             description="a list of Verilog and RTLIL project paths to include in the build",
             required=False,
             isinstance_list=str,
+        ),
+        Prop(
+            "commands",
+            description="a list of Command objects which extend the CLI",
+            required=False,
+            isinstance_list=Command,
         ),
     ]
 
@@ -163,6 +171,15 @@ class Project:
     @property
     def path(self):
         return ProjectPath(self)
+
+    @classmethod
+    def command(cls, *, help):
+        def inner(add_arguments):
+            cls.commands.append(Command(
+                add_arguments=add_arguments,
+                help=help,
+            ))
+        return inner
 
 
 class ProjectPath:
