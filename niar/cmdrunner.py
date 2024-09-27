@@ -123,13 +123,15 @@ class CommandRunner:
 
         failed = []
         for cu, proc in runnables:
-            if proc is not None and proc.wait() != 0:
-                failed.append(cu)
+            if proc is not None:
+                status = proc.wait()
+                if status != 0:
+                    failed.append((cu, status))
 
         if failed:
             logger.error("the following process(es) failed:")
-            for cu in failed:
-                logger.error(f"  {formatted(cu)}")
+            for (cu, status) in failed:
+                logger.error(f"  {formatted(cu)} (status={status})")
             raise CommandFailedError(f"failed {step} step")
 
         for cu, _ in runnables:

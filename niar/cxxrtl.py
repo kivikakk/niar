@@ -286,6 +286,8 @@ def main(np: Project, args):
             except KeyboardInterrupt:
                 print(file=sys.stderr)
                 logger.log(logging.INFO, "aborting on KeyboardInterrupt")
+            except CommandFailedError:
+                logger.log(logging.INFO, "aborting on CommandFailedError")
 
 
 def _make_yosys_relative(path):
