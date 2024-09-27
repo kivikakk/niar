@@ -12,7 +12,7 @@ from amaranth._toolchain.yosys import find_yosys
 from amaranth.back import rtlil
 
 from .build import construct_top
-from .cmdrunner import CommandRunner
+from .cmdrunner import CommandRunner, CommandFailedError
 from .logging import logtime, logger
 from .project import Project
 
@@ -251,7 +251,11 @@ def main(np: Project, args):
                 infs=cc_o_paths + list(np.path("cxxrtl").glob("**/*.zig")),
                 outf=outf,
                 chdir="cxxrtl")
-            cr.run()
+            try:
+                cr.run()
+            except CommandFailedError:
+                logger.log(logging.INFO, "aborting on CommandFailedError")
+                return
             shutil.copy(outf, exe_o_path)
         else:
             cmd = [
@@ -266,7 +270,11 @@ def main(np: Project, args):
             cr.add_process(cmd,
                 infs=cc_o_paths,
                 outf=exe_o_path)
-            cr.run()
+            try:
+                cr.run()
+            except CommandFailedError:
+                logger.log(logging.INFO, "aborting on CommandFailedError")
+                return
 
     if not args.compile:
         cmd = [exe_o_path]

@@ -5,7 +5,7 @@ import subprocess
 
 from .logging import logger
 
-__all__ = ["CompilationUnit", "CommandRunner"]
+__all__ = ["CompilationUnit", "CommandRunner", "CommandFailedError"]
 
 
 class CompilationUnit:
@@ -76,6 +76,8 @@ class CompilationUnit:
                 with open(inf, "rb") as f:
                     r[str(inf)] = f.read()
         return r
+
+
 class CommandRunner:
     cus: list[CompilationUnit]
 
@@ -128,7 +130,7 @@ class CommandRunner:
             logger.error("the following process(es) failed:")
             for cu in failed:
                 logger.error(f"  {formatted(cu)}")
-            raise RuntimeError(f"failed {step} step")
+            raise CommandFailedError(f"failed {step} step")
 
         for cu, _ in runnables:
             cu.mark_up_to_date()
@@ -142,6 +144,10 @@ class CommandRunner:
         else:
             action = "[run]  "
         logger.info(f"{action} {formatted(cu)}")
+
+
+class CommandFailedError(RuntimeError):
+    pass
 
 
 def formatted(cu):
